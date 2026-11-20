@@ -35,6 +35,8 @@ export interface Agent {
   last_heartbeat: string | null;
   /** How the last look went, in a few words. */
   heartbeat_status: string | null;
+  /** 1 where it does without the memory an extension holds: see memoryHeldAt in project-agent.ts. */
+  memory_off: number;
   created_at: string;
 }
 
@@ -236,6 +238,17 @@ export function setVoice(id: string, voice: unknown, offered: readonly string[] 
   if (typeof voice !== "string") throw new AgentError("Choose a voice", 400);
   if (voice && !offered?.includes(voice)) throw new AgentError("Choose one of the voices voice mode's source offers now, or none", 400);
   getDb().prepare("UPDATE agents SET voice = ? WHERE id = ?").run(voice || null, id);
+  return getAgent(id)!;
+}
+
+/**
+ * Whether the agent uses the memory an extension holds (`memory`), or does without it and keeps to its own
+ * MEMORY.md: for an agent that talks to people the person's memory is not for, such as a secretary.
+ */
+export function setAgentMemory(id: string, memory: unknown): Agent {
+  if (!getAgent(id)) throw new AgentError("No such agent", 404);
+  if (typeof memory !== "boolean") throw new AgentError("Say whether it uses the memory", 400);
+  getDb().prepare("UPDATE agents SET memory_off = ? WHERE id = ?").run(memory ? 0 : 1, id);
   return getAgent(id)!;
 }
 

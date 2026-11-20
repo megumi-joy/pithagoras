@@ -184,3 +184,34 @@ test("a project whose agent is deleted is a blank slate again, and keeps what it
   assert.equal(projectAgents().has('orphan'), false);
   assert.deepEqual(projectAgent('orphan-memory'), { agent: '', memoryOff: true });
 });
+
+test('an agent that does without the held memory reads its own MEMORY.md, in its home and in a project linked to it', async () => {
+  reset('linked-secretary');
+  const { setAgentMemory, getAgent } = await import('../dist/agents.js');
+  const { agentFileStatus } = await import('../dist/agent-setup.js');
+  const secretary = createAgent({ name: 'Secretary' });
+  for (const f of ['SOUL.md', 'PrimaryUser.md', 'MEMORY.md']) writeFileSync(path.join(secretary.home, f), `# ${f} of Secretary`);
+  const dir = project('linked-secretary');
+  setProjectAgent('linked-secretary', { agent: secretary.id, memoryOff: false });
+  holding(true);
+  assert.equal(heldAt(secretary.home), true, 'held by default');
+  assert.equal(heldAt(dir), true);
+  assert.deepEqual(names(extraContextFiles(secretary.home, 'primary')), ['PrimaryUser.md', 'SOUL.md']);
+
+  setAgentMemory(secretary.id, false);
+  assert.equal(getAgent(secretary.id).memory_off, 1);
+  assert.equal(heldAt(secretary.home), false, 'not in its home');
+  assert.equal(heldAt(path.join(secretary.home, 'notes')), false, 'nor in a folder of it');
+  assert.equal(heldAt(dir), false, 'nor in a project linked to it');
+  assert.deepEqual(names(extraContextFiles(secretary.home, 'primary')), ['MEMORY.md', 'PrimaryUser.md', 'SOUL.md']);
+  const status = agentFileStatus(secretary.home);
+  assert.equal(status.memory, 'file');
+  assert.equal(status.memoryHeld, true);
+  // Another agent keeps the held memory.
+  assert.equal(heldAt(nova.home), true);
+
+  setAgentMemory(secretary.id, true);
+  assert.equal(heldAt(secretary.home), true);
+  assert.throws(() => setAgentMemory(secretary.id, 'no'), /Say whether/);
+  reset('linked-secretary');
+});

@@ -139,6 +139,8 @@ export interface AgentSetup {
   /** Where the agent's memory is kept: while something holds it (`by` names it), MEMORY.md is not read. */
   memory?: "file" | "extension";
   by: string | null;
+  /** Whether an extension holds the memory at all: the agent can then do without it (Agent.memory). */
+  memoryHeld?: boolean;
 }
 
 /** An agent: a home of its own, with its own SOUL.md, PrimaryUser.md and memory. */
@@ -160,6 +162,8 @@ export interface Agent {
   orb: OrbStyle;
   /** The voice it speaks with: an id from the voices voice mode's source offers, or "" for its own choice. */
   voice: string;
+  /** Whether it uses the memory an extension holds, where one does; false keeps it to its own MEMORY.md. */
+  memory: boolean;
   /** How it looks around on its own. */
   heartbeat: {
     /** 0 is never. */
@@ -965,6 +969,8 @@ export const api = {
   /** On makes it the agent the New button starts with; off hands that back to the first agent. */
   setNewChats: (agent: string, on: boolean) =>
     json<Agent>(`/api/agents/${encodeURIComponent(agent)}/new-chats`, { method: "PUT", body: JSON.stringify({ on }) }),
+  setAgentMemory: (agent: string, memory: boolean) =>
+    json<Agent>(`/api/agents/${encodeURIComponent(agent)}/memory`, { method: "PUT", body: JSON.stringify({ memory }) }),
   setAgentVoice: (agent: string, voice: string) =>
     json<Agent>(`/api/agents/${encodeURIComponent(agent)}/voice`, { method: "PUT", body: JSON.stringify({ voice }) }),
   agentSkills: (agent: string) => json<{ folder: string; skills: AgentSkill[] }>(`/api/agents/${encodeURIComponent(agent)}/skills`),

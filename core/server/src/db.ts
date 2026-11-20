@@ -475,6 +475,9 @@ function schema(db: Database.Database): void {
       quiet_end TEXT,
       last_heartbeat TEXT,
       heartbeat_status TEXT,
+      -- Whether it does without the memory an extension holds (memory-holder.ts): a secretary that talks to
+      -- strangers keeps to its own MEMORY.md, not the person's memory.
+      memory_off INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -1241,6 +1244,7 @@ function migrate(d: Database.Database): void {
     if (!agentCols.includes(col)) d.exec(`ALTER TABLE agents ADD COLUMN ${col} TEXT`);
   }
   if (!agentCols.includes("heartbeat_minutes")) d.exec("ALTER TABLE agents ADD COLUMN heartbeat_minutes INTEGER");
+  if (!agentCols.includes("memory_off")) d.exec("ALTER TABLE agents ADD COLUMN memory_off INTEGER NOT NULL DEFAULT 0");
   // The Home there always was is the first agent, named as its SOUL.md names
   // it, and wearing the avatar the portal had.
   if (!d.prepare("SELECT 1 FROM agents LIMIT 1").get()) {

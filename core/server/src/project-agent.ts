@@ -57,12 +57,17 @@ export function agentFor(workspace: string | null | undefined): Agent {
  * and so no memory of the person: it does not get it. A project linked
  * to an agent does unless it says it does not want it (stored as
  * `memoryOff`), and then its chats neither get the holder's rule nor leave
- * the agent's MEMORY.md aside.
+ * the agent's MEMORY.md aside. An agent can do without it the same way
+ * (agents.memory_off), wherever its chats are.
  */
 export function memoryHeldAt(workspace: string | null | undefined): MemoryHolder | undefined {
   const holder = memoryHolder();
   if (!holder) return undefined;
-  const project = !workspace || agentOf(workspace) ? undefined : projectOf(workspace);
+  // An agent that does without it (agents.memory_off) has none, in its home and in a project linked to it.
+  const own = workspace ? agentOf(workspace) : undefined;
+  if (own) return own.memory_off ? undefined : holder;
+  const project = workspace ? projectOf(workspace) : undefined;
   if (!project) return holder;
-  return linkedAgent(project) && !projectAgent(project).memoryOff ? holder : undefined;
+  const agent = linkedAgent(project);
+  return agent && !agent.memory_off && !projectAgent(project).memoryOff ? holder : undefined;
 }
