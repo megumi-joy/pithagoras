@@ -485,6 +485,24 @@ function AgentView({
                   }}
                 />
               </div>
+              {setup?.memoryHeld && (
+                <div className="flex min-w-0 items-center gap-2 rounded-lg bg-raised/60 px-2.5 py-1" title={t("Off keeps it to its own MEMORY.md, for an agent that talks to people the memory is not for")}>
+                  <span className="truncate text-[11px] text-fg-subtle">{t("Uses the memory")}</span>
+                  <Switch
+                    on={agent.memory}
+                    label={t("Uses the memory")}
+                    onChange={async (on) => {
+                      setError("");
+                      try {
+                        await api.setAgentMemory(agent.id, on);
+                        await Promise.all([onPickChanged(), readSetup()]);
+                      } catch (e) {
+                        setError((e as Error).message);
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </PageHeader>
 

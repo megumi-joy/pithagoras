@@ -2,7 +2,7 @@ import { lstatSync } from "node:fs";
 import path from "node:path";
 import express, { type Router } from "express";
 import { agentSkillsDir, listAgentSkills, readAgentSkill } from "../agent-skills.js";
-import { AgentError, DEFAULT_AGENT, agentOf, channelsOf, createAgent, defaultAgent, getAgent, listAgents, newChatAgent, orbOf, renameAgent, setNewChatAgent, setOrb, setVoice, type Agent } from "../agents.js";
+import { AgentError, DEFAULT_AGENT, agentOf, channelsOf, createAgent, defaultAgent, getAgent, listAgents, newChatAgent, orbOf, renameAgent, setNewChatAgent, setAgentMemory, setOrb, setVoice, type Agent } from "../agents.js";
 import { agentFileStatus, isInitialised, runWizard, writeAgentFile, type WizardInput } from "../agent-setup.js";
 import { listAgentSessions, listSessions } from "../db.js";
 import { deleteNote, listNotes, markNoteRead, markNotesRead, unreadNotes } from "../activity.js";
@@ -39,6 +39,8 @@ export function agentToApi(a: Agent, chats = 0, newChats = newChatAgent().id ===
     channels: channelsOf(a.id),
     orb: orbOf(a),
     voice: a.voice ?? "",
+    // Whether it uses the memory an extension holds, where one does; false keeps it to its own MEMORY.md.
+    memory: !a.memory_off,
     heartbeat: {
       minutes: a.heartbeat_minutes ?? 0,
       quietStart: a.quiet_start ?? "",
@@ -131,6 +133,15 @@ export function agentsRouter(): Router {
   router.put("/agents/:id/voice", (req, res) => {
     try {
       res.json(agentToApi(setVoice(req.params.id, req.body?.voice, sourceVoices()?.map((v) => v.id))));
+    } catch (e) {
+      failed(res, e);
+    }
+  });
+
+  /** `{ memory }`: whether it uses the memory an extension holds, or keeps to its own MEMORY.md. */
+  router.put("/agents/:id/memory", (req, res) => {
+    try {
+      res.json(agentToApi(setAgentMemory(req.params.id, req.body?.memory)));
     } catch (e) {
       failed(res, e);
     }

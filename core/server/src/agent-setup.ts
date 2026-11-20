@@ -3,6 +3,7 @@ import path from "node:path";
 import { agentHome } from "./agent-home.js";
 import { writeFileAtomic } from "./atomic-write.js";
 import { memoryHolder } from "./memory-holder.js";
+import { memoryHeldAt } from "./project-agent.js";
 import { WATCH_FILE } from "./pi/context-files.js";
 import { CHANGED, FileError, baseDir, writeText } from "./workspace-files.js";
 
@@ -68,13 +69,16 @@ export function readAgentFile(name: string, home = agentHome()): string {
 }
 
 export function agentFileStatus(home = agentHome()) {
-  const holder = memoryHolder();
+  // The agent's own: one that does without the held memory reads its MEMORY.md (memoryHeldAt).
+  const holder = memoryHeldAt(home);
   return {
     home,
     initialised: isInitialised(home),
     // Where the agent's memory is kept: while something holds it (`by` names it), MEMORY.md is not read.
     memory: holder ? ("extension" as const) : ("file" as const),
     by: holder?.label ?? null,
+    // Whether an extension holds the memory at all: the agent can then do without it (agents.memory_off).
+    memoryHeld: memoryHolder() !== undefined,
     files: EDITABLE_FILES.map((name) => {
       const read = readPlain(name, home);
       // `mtime` is what a save sends back as `expected`: the agent writes these files too.
