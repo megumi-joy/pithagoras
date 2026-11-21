@@ -182,6 +182,7 @@ export function Chat({
   onRename,
   onSetMode,
   onOpenNavigation,
+  voicePage,
   parentTitle,
   versions = {},
   loading,
@@ -214,6 +215,8 @@ export function Chat({
   onSetMode: (mode: string, confirmed?: boolean) => Promise<void>;
   /** On a phone, where the sidebar is a drawer: opens it. */
   onOpenNavigation?: () => void;
+  /** Set on /voice: the stage of voice mode stands alone, with no header or feed, and `chat` is where leaving it goes. */
+  voicePage?: { chat: string };
   /** For a sub-chat (see sub-chats.ts): its chat's title, where the list has that chat. */
   parentTitle?: string;
   /**
@@ -1813,8 +1816,8 @@ export function Chat({
   return (
     <div className="session-workspace relative flex h-full min-h-0 flex-col">
       {pictures.viewer}
-      <div ref={setVoiceHost} className={voiceMode ? "flex min-h-0 flex-1 flex-col" : "hidden"} />
-      <header className={voiceMode ? "hidden" : "chat-header border-b border-line px-4 py-3 max-md:px-3 max-md:py-2"}>
+      <div ref={setVoiceHost} className={voiceMode || voicePage ? `flex min-h-0 flex-1 flex-col${voicePage ? " voicy-look" : ""}` : "hidden"} />
+      <header className={voiceMode || voicePage ? "hidden" : "chat-header border-b border-line px-4 py-3 max-md:px-3 max-md:py-2"}>
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3 max-md:gap-2">
         {onOpenNavigation && (
           <button type="button" aria-label={t("Open navigation")} aria-controls="mobile-navigation" onClick={onOpenNavigation} className="-ml-1 rounded-lg p-2 text-fg hover:bg-fg/10 md:hidden">
@@ -1878,7 +1881,7 @@ export function Chat({
         </div>
       </header>
 
-      <div ref={body} className={voiceMode ? "hidden" : "chat-body relative flex min-h-0 flex-1 flex-row"}>
+      <div ref={body} className={voiceMode || voicePage ? "hidden" : "chat-body relative flex min-h-0 flex-1 flex-row"}>
       {placeAside("left")}
       {/* No narrower than 320px beside panels at a side: they give way instead (see placeAside). */}
       <div ref={column} className={`chat-column flex min-h-0 min-w-0 flex-1 flex-col ${groupAt("left") || groupAt("right") ? "md:min-w-[320px]" : ""}`}>
@@ -2257,7 +2260,7 @@ export function Chat({
                 <LuPaperclip aria-hidden className="h-4 w-4" />
               </button>
               <DictationButton dictation={dictation} />
-              <VoiceControl folder={session.workspace} key={session.id} sessionId={session.id} items={items} running={running} work={phase} onSend={onSend} onAbort={onAbort} stageTarget={voiceHost} onModeChange={setVoiceMode} title={session.title} toolEvents={events} />
+              <VoiceControl folder={session.workspace} key={session.id} sessionId={session.id} items={items} running={running} work={phase} onSend={onSend} onAbort={onAbort} stageTarget={voiceHost} onModeChange={setVoiceMode} page={voicePage} title={session.title} toolEvents={events} />
               {/* Mid-run, Stop stays while a message is written: it is the
                   moment the agent is seen going the wrong way, and whether to
                   steer it or stop it is still open. */}

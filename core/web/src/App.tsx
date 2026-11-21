@@ -27,6 +27,7 @@ import { fancy, keep, swapPages, type Leave } from "./motion";
 import { reconcile } from "./reconcile";
 import { useStable } from "./use-stable";
 import { splitSubChats } from "./sub-chats";
+import { chatForVoice } from "./voice-page";
 import { useDialogFocus } from "./dialog-focus";
 import { t, useLanguage } from "./i18n";
 import { followInstalled, Here, setNavigate, startExtensions } from "./extensions/loader";
@@ -128,6 +129,8 @@ export default function App() {
       <ConfirmHost />
       <Routes>
       <Route path="/" element={<Shell />} />
+      {/* The voice page: the stage of voice mode over the agent's latest chat, with no chat chrome. */}
+      <Route path="/voice" element={<Shell view="voice" />} />
       <Route path="/sessions" element={<Shell view="sessions" />} />
       <Route path="/projects" element={<Shell view="projects" />} />
       <Route path="/agents" element={<Shell view="agents" />} />
@@ -159,12 +162,16 @@ function Shell({
   view = "chat",
 }: {
   settings?: boolean;
-  view?: "chat" | "sessions" | "projects" | "agents" | "routines" | "audit" | "extension";
+  view?: "chat" | "voice" | "sessions" | "projects" | "agents" | "routines" | "audit" | "extension";
 }) {
   // What follows /x/ in the address: `<extension>/<page id>` of a page an extension brought, or `<extension>` of its page in Settings.
-  const { sessionId, tab, "*": extensionPart = "" } = useParams<{ sessionId?: string; tab?: string; "*"?: string }>();
+  const { sessionId: routeSession, tab, "*": extensionPart = "" } = useParams<{ sessionId?: string; tab?: string; "*"?: string }>();
   const navigate = useNavigate();
   const { pathname, search, state } = useLocation();
+  // /voice has no chat in its address: it is the one chatForVoice picks, kept here once found.
+  const [voiceChat, setVoiceChat] = useState<string | null>(null);
+  const sessionId = view === "voice" ? voiceChat ?? undefined : routeSession;
+  const voiceAgent = view === "voice" ? new URLSearchParams(search).get("agent") : null;
   // What the installed extensions draw in the portal: see extensions/loader.ts.
   useEffect(() => {
     setNavigate(navigate);
@@ -287,6 +294,21 @@ function Shell({
     const first = splitSubChats(latestSessions.current).top[0];
     if (first) navigate(`/s/${first.id}`, { replace: true });
   }, [sessionsAsked, sessionId, settings, view]);
+
+  // /voice: the agent's latest chat, or a new one, found once the chats are known (and again for another ?agent=).
+  useEffect(() => {
+    if (view !== "voice" || !sessionsAsked) return;
+    let live = true;
+    chatForVoice({ agents: api.agents, createSession: api.createSession }, latestSessions.current, voiceAgent)
+      .then(async (found) => {
+        if (!live) return;
+        if (!found) return setError(t("There is no agent to talk to"));
+        await refreshSessions().catch(() => {});
+        if (live) setVoiceChat(found.session.id);
+      })
+      .catch((e) => { if (live) setError((e as Error).message); });
+    return () => { live = false; };
+  }, [view, sessionsAsked, voiceAgent, refreshSessions]);
 
   // Replay-then-tail for whichever session is in the URL.
   useEffect(() => {
@@ -705,14 +727,14 @@ function Shell({
         role={mobileNav ? "dialog" : undefined}
         aria-modal={mobileNav ? true : undefined}
         aria-label={mobileNav ? t("Navigation") : undefined}
-        className={`${mobileNav ? "mobile-drawer fixed inset-y-0 left-0 z-50 flex outline-none" : "hidden"} h-full shrink-0 md:static md:z-auto md:flex`}>
+        className={`${mobileNav ? "mobile-drawer fixed inset-y-0 left-0 z-50 flex outline-none" : "hidden"} h-full shrink-0 md:static md:z-auto ${view === "voice" ? "md:hidden" : "md:flex"}`}>
       {mobileNav && <button type="button" aria-label={t("Close navigation")} onClick={() => setMobileNav(false)} className="absolute right-2 top-3 z-20 rounded-lg p-2 text-fg md:hidden"><LuX size={20}/></button>}
       <Sidebar
         forceExpanded={mobileNav}
         sessions={sessions}
         executor={executor}
         activeId={sessionId ?? null}
-        view={view === "extension" ? `x/${extensionPart}` : view}
+        view={view === "extension" ? `x/${extensionPart}` : view === "voice" ? "chat" : view}
         places={places}
         onNavigate={onNavigate}
         onOpenFolder={onOpenFolder}
@@ -728,7 +750,7 @@ function Shell({
       <main ref={main} className="app-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {/* In a chat the chat's own header has the menu button, and this bar
             would only repeat its title; in voice mode that header is gone. */}
-        <header className="app-mobile-bar flex shrink-0 items-center gap-3 border-b border-line px-3 py-2 md:hidden">
+        <header className={`app-mobile-bar ${view === "voice" ? "hidden" : "flex"} shrink-0 items-center gap-3 border-b border-line px-3 py-2 md:hidden`}>
           <button type="button" aria-label={t("Open navigation")} aria-expanded={mobileNav} aria-controls="mobile-navigation" onClick={() => setMobileNav(true)} className="rounded-lg p-2 text-fg hover:bg-fg/10"><LuMenu size={20}/></button>
           <span className="truncate text-sm text-fg">{(extensionPage && titleOf(extensionPage)) || active?.title || "Pithagoras"}</span>
         </header>
@@ -835,6 +857,7 @@ function Shell({
               await refreshSessions();
             }}
             onOpenNavigation={() => setMobileNav(true)}
+            voicePage={view === "voice" ? { chat: `/s/${active.id}` } : undefined}
             parentTitle={active.parent ? sessions.find((s) => s.id === active.parent)?.title : undefined}
             onClientCommand={async (name, args) => {
               if (name === "settings") {

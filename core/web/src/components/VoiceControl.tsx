@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { voiceCue, type VoiceCue } from "../voice-cues";
 import { createPortal } from "react-dom";
 import { VoiceStage, type VoiceLevels } from "./VoiceStage";
+import { VoicePageIdle } from "./VoicePageIdle";
 import { LuAudioLines, LuLoaderCircle, LuGauge } from "react-icons/lu";
 import type { MicVAD } from "@ricky0123/vad-web";
 import { api, json, type PortalEvent, type PromptOptions } from "../api";
@@ -33,12 +34,14 @@ const REPEAT_SECONDS = 120;
 type KeptPhrase = { samples: Float32Array[]; sampleRate: number; stretched?: { rate: number; samples: Promise<Float32Array>; signal: AbortSignal; ready?: boolean } };
 const seconds = (phrase: KeptPhrase) => phrase.samples.reduce((n, s) => n + s.length, 0) / phrase.sampleRate;
 
-export function VoiceControl({ sessionId, folder, items, running, work, onSend, onAbort, stageTarget, onModeChange, title, toolEvents }: {
+export function VoiceControl({ sessionId, folder, items, running, work, onSend, onAbort, stageTarget, onModeChange, page, title, toolEvents }: {
   sessionId: string;
   /** The folder the chat works in: a tool card names a file by its path there, and the windows are told of it. */
   folder: string;
   stageTarget: HTMLElement | null;
   onModeChange: (active: boolean) => void;
+  /** On /voice: the idle stage, whose orb a touch starts the conversation with, stands where the button of a chat would be. */
+  page?: { chat: string };
   title: string;
   toolEvents: PortalEvent[];
   items: Item[];
@@ -670,8 +673,9 @@ export function VoiceControl({ sessionId, folder, items, running, work, onSend, 
     return () => window.removeEventListener("keydown", down, true);
   }, [available]);
 
-  if (!available) return null;
+  if (!available && !page) return null;
   return <>
+    {page && !starting && !enabled && stageTarget && createPortal(<VoicePageIdle sessionId={sessionId} starting={starting} onStart={() => { void start(); }} chat={page.chat} />, stageTarget)}
     {profileOpen&&createPortal(<VoiceProfile profiler={profiler.current!} onClose={()=>{setProfileOpen(false);profiler.current!.close('disabled');}}/>,document.body)}
 
     {(starting || enabled) && stageTarget && createPortal(
