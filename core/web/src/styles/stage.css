@@ -339,3 +339,23 @@ body.is-resizing iframe { pointer-events: none; }
 .is-maximized > .resize-handle { display: none; }
 /* Pictures waiting to be sent sit at the top right, over where the window's buttons would be. */
 .voice-stage:has(.voice-attachments) .voice-extension-window.is-open.is-maximized { top: 56px !important; }
+
+/* The /voice page wears the look of Voicy's call page (www/call.html): its palette over the stage and its orb. */
+.voicy-look {
+  --canvas: 5 5 5;
+  --surface: 11 15 13;
+  --raised: 20 24 22;
+  --line: 40 40 40;
+  --fg: 240 240 240;
+  --fg-muted: 160 160 160;
+  --fg-subtle: 160 160 160;
+  --fg-faint: 150 150 150;
+  --accent: 0 230 118;
+  --accent-fg: 0 0 0;
+  --danger: 248 113 113;
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--fg));
+  background-image:
+    radial-gradient(circle at 50% 15%, rgba(0, 230, 118, .09) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(0, 176, 255, .08) 0%, transparent 40%);
+}
