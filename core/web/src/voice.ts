@@ -1,9 +1,16 @@
 import { t } from "./i18n";
 import type { Item } from "./transcript";
 
+/**
+ * The marker voice mode puts before a spoken request (AUDIO_MESSAGE_PREFIX on the server). A small model may echo
+ * it at the start of its reply; it is neither read aloud nor shown.
+ */
+const AUDIO_MARKER = /\[audio mode\][ \t]*\n?/gi;
+export const withoutAudioMarker = (text: string): string => text.replace(AUDIO_MARKER, "");
+
 /** Keep code blocks and link destinations out of speech; split without losing text. */
 export function speechChunks(text: string): string[] {
-  const plain = text.replace(/```[\s\S]*?(?:```|$)/g, () => ` ${t("Code is shown in the transcript.")} `)
+  const plain = withoutAudioMarker(text).replace(/```[\s\S]*?(?:```|$)/g, () => ` ${t("Code is shown in the transcript.")} `)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/<[^>]*>/g, '').replace(/[*_`#>|]/g, '').replace(/\s+/g, ' ').trim();
   const chunks: string[] = [];
@@ -108,4 +115,4 @@ export function displaySpeechText(text: string, done: boolean): string {
 
 /** What the agent said, as it is read — without the reasoning model's stray tags. */
 export const assistantText = (item: { text: string; done: boolean; audio?: boolean }): string =>
-  (item.audio ? displaySpeechText(item.text, item.done) : item.text).replace(/<\/?think(ing)?>/gi, "");
+  (item.audio ? displaySpeechText(withoutAudioMarker(item.text), item.done) : item.text).replace(/<\/?think(ing)?>/gi, "");
