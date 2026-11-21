@@ -19,7 +19,7 @@ export function VoicePageIdle({ sessionId, starting, onStart, chat }: { sessionI
         onClick={onStart}
         disabled={starting}
         aria-label={t("Tap to start the conversation")}
-        className="my-6 aspect-square w-[min(70vw,45dvh,22rem)] rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="voice-avatar my-10 w-[min(70vw,45dvh,22rem)] rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <AgentAvatar look={look} agent={agent} mode="idle" levels={levels} still />
       </button>
