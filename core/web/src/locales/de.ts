@@ -1753,6 +1753,8 @@ const de: Locale = {
     "Restore the size of {panel}": "Größe von {panel} wiederherstellen",
     "Minimize": "Minimieren",
     "Tap to continue voice mode": "Tippen, um den Sprachmodus fortzusetzen",
+    "Uses the memory": "Nutzt das Gedächtnis",
+    "Off keeps it to its own MEMORY.md, for an agent that talks to people the memory is not for": "Aus: nur die eigene MEMORY.md des Agenten, für einen Agenten, der mit Menschen spricht, für die das Gedächtnis nicht gedacht ist",
     "Tap to start the conversation": "Tippen, um das Gespräch zu beginnen",
     "Tap the orb to talk": "Tippe auf die Kugel, um zu sprechen",
     "Open the chat": "Chat öffnen",
