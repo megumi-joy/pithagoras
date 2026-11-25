@@ -17,10 +17,10 @@
     "cookie-parser": "^1.4.7",
     "express": "^5.0.1",
     "jose": "^6.2.12",
-    "nanoid": "^5.0.9",
+    "nanoid": "^5.1.16",
     "semver": "^7.8.5",
     "typebox": "^1.1.38",
-    "undici": "^8.11.2"
+    "undici": "^8.13.1"
   },
   "devDependencies": {
     "@pithagoras/extension-api": "*",
