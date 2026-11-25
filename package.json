@@ -24,5 +24,10 @@
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      "undici": "^8.13.1"
+    }
   }
 }
